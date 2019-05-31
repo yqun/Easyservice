@@ -1,33 +1,35 @@
 <template>
-  <scroller lock-x height="100%"
-            ref="scroller"
-            @on-scroll-bottom="onScrollBottom"
-            :scroll-bottom-offst="200"
-            style="box-sizing: border-box; padding-top: 0px;padding-bottom: 15px;">
-    <ul>
-      <li class="clearfix"
-          @click="$router.push({path: `/myorderlistiteminfo/${item.id}`, query: {id: id, index: index}})"
-          v-for="item in list" :key="item.id">
-        <div class="item-content">
-          <h3>问题：{{item.f_description}}</h3>
-          <p>客户：{{item.f_customer_name}}({{item.f_customer_phnum}})</p>
-          <p>地址：{{item.f_address}}</p>
-          <span>{{item.f_create_time}}</span>
-          <i v-if="index == 1 && item.appraiseCount == 0" @click.stop="evaluate(item)">添加评价</i>
-          <i v-if="index == 1 && item.appraiseCount > 0" @click.stop="evaluate(item)">查看评价</i>
-        </div>
-        <div class="item-state">
-          {{item.f_work_order_state}}
-        </div>
-      </li>
-    </ul>
-  </scroller>
+  <div style="height: 100%;">
+    <scroller lock-x height="100%" ref="scroller" @on-scroll-bottom="onScrollBottom" :scroll-bottom-offst="200"
+              style="box-sizing: border-box; padding-top: 0px;padding-bottom: 15px;">
+      <ul>
+        <li class="clearfix"
+            @click="$router.push({path: `/myorderlistiteminfo/${item.id}`, query: {id: id}})"
+            v-for="item in list" :key="item.id">
+          <div class="item-content">
+            <h3>问题：{{item.f_description}}</h3>
+            <p>客户：{{item.f_customer_name}}({{item.f_customer_phnum}})</p>
+            <p>地址：{{item.f_address}}</p>
+            <span>{{item.f_create_time}}</span>
+            <div>
+              <i v-if="navIndex != 2" @click.stop="evaluate(item,1)">评价工单</i>
+              <i v-if="navIndex != 2" @click.stop="evaluate(item,0)">投诉</i>
+            </div>
+          </div>
+          <div class="item-state">
+            {{item.f_work_order_state}}
+          </div>
+        </li>
+      </ul>
+    </scroller>
+  </div>
 </template>
 
 <script>
+import {mapState} from 'vuex'
 export default {
   name: "myorderlistitem",
-  props:['index', 'id'],
+  props:['id'],
   data() {
     return {
       list: [],
@@ -38,13 +40,16 @@ export default {
       flag: true,
     }
   },
+  computed: {
+    ...mapState(['navIndex'])
+  },
   watch: {
-    index(newVal, oldVal) {
+    navIndex(newVal, oldVal) {
       this.getIndex(newVal)
     }
   },
-  created () {
-    this.getIndex(this.index)
+  mounted () {
+    this.getIndex(this.navIndex)
   },
   methods: {
     getIndex(index) {
@@ -71,10 +76,16 @@ export default {
     },
     // 获取待指派
     getWait() {
+      const data = {
+        f_handler_org_id: this.id,
+        f_work_order_state: this.status,
+        page: this.page,
+        rows: this.rows
+      }
       this.axios
-        .get(`workOrder/findEntityByPage.do?f_handler_org_id=${this.id}&f_work_order_state=${this.status}&page=${this.page}&rows=${this.rows}`)
+        .get(`workOrder/findEntityByPage.do`, {params: data})
         .then(res => {
-          // console.log(res)
+          console.log(res)
           const {status} = res
           if (status !== 200) return false;
           const {rows, total} = res.data
@@ -86,14 +97,13 @@ export default {
         })
     },
     // 评价e
-    evaluate(item) {
+    evaluate(item,state) {
       this.$router.push({
         path: '/estimate',
         query: {
           id: this.id,
           orderId: item.id,
-          index: this.index,
-          appraise:item.appraise || ''
+          state: state
         }
       })
     }

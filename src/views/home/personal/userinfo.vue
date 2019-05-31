@@ -1,28 +1,22 @@
 <template>
   <div>
     <group>
-      <x-input title="　用户名:"　:show-clear="false" text-align="right" v-model="userName"></x-input>
-      <selector title="　　性别:" :options="list" direction="rtl" v-model="userSex"></selector>
-      <x-input title="　手机号:" disabled text-align="right" v-model="userPhone"></x-input>
-      <datetime title="出生日期:" v-model="userDatetime" :min-year="1950"></datetime>
-      <x-input title="　　备注:" :show-clear="false" text-align="right" v-model="userRemark"></x-input>
+      <x-input title="　用户名:" v-model="userName" :show-clear="false" text-align="right"></x-input>
+     <selector title="　　性别:" v-model="userSex" :options="list" direction="rtl"></selector>
+      <x-input title="　手机号:" v-model="userPhone" disabled text-align="right"></x-input>
+     <datetime title="出生日期:" v-model="userDatetime" :min-year="1950"></datetime>
+      <x-input title="　　备注:" v-model="userRemark" :show-clear="false" text-align="right"></x-input>
     </group>
     <!-- 保存  修改手机号  修改密码 -->
     <flexbox :gutter="20" class="content">
       <flexbox-item>
-        <div class="flex-demo" :style="bgColor" @click="saveUserInfo()">
-          保存
-        </div>
+        <div class="flex-demo" :style="bgColor" @click="saveUserInfo()">保存</div>
       </flexbox-item>
       <flexbox-item>
-        <div class="flex-demo" @click="$router.push(`/updatephone`)">
-          修改手机号
-        </div>
+        <div class="flex-demo" @click="$router.push('/updatephone')">修改手机号</div>
       </flexbox-item>
       <flexbox-item>
-        <div class="flex-demo" @click="$router.push('/updatepassword')">
-          修改密码
-        </div>
+        <div class="flex-demo" @click="$router.push('/updatepassword')">修改密码</div>
       </flexbox-item>
     </flexbox>
     <!-- 退出登录 -->
@@ -51,24 +45,35 @@ export default {
       f_order: "",
     }
   },
+  computed: {
+    saveColor() {
+      return this.f_name == this.userName &&
+        this.f_remark == this.userRemark &&
+        this.f_birthday == this.userDatetime &&
+        this.f_order == this.userSex
+    }
+  },
+  watch: {
+    saveColor(newVal, oldVal) {
+      if (!newVal) {
+        this.bgColor.backgroundColor = '#2A91D8'
+      } else {
+        this.bgColor.backgroundColor = '#aaa'
+      }
+    }
+  },
   created() {
     this.getSex()
   },
   methods: {
     // 获取性别字典项
     getSex() {
-      const data = {
-        f_name: '性别'
-      }
       this.axios
-        .post('dic/getDicValues.do', data)
+        .post('dic/getDicValues.do', {f_name: '性别'})
         .then(res => {
           const {data} = res
           data.forEach(item => {
-            this.list.push({
-              key: item.id,
-              value: item.f_value
-            })
+            this.list.push({key: item.id, value: item.f_value})
           })
           // 获取用户信息
           this.getUserInfo()
@@ -76,10 +81,9 @@ export default {
     },
     // 获取用户信息
     getUserInfo() {
-      const id = window.sessionStorage.getItem('id')
-      this.userId = id
+      this.userId = window.localStorage.getItem('id')
       this.axios
-        .get(`user/findUserById.do?id=${id}`)
+        .get(`user/findUserById.do?id=${this.userId}`)
         .then(res => {
           // console.log(res)
           // token 与后台不符
@@ -116,37 +120,19 @@ export default {
         this.axios
           .post('/user/updateUser.do', data)
           .then(res => {
-            console.log(res)
-            const {data} = res
-            if (data == "success") {
-              this.getUserInfo()
-            }
+            // console.log(res)
+            if (res.data == "success") return this.getUserInfo();
           })
       }
     },
     // 退出登陆
     deleteSession() {
-      window.sessionStorage.removeItem('token')
-      this.getUserInfo()
+      window.localStorage.removeItem('token')
+      // this.getUserInfo()
+      this.$router.push('/login')
     }
   },
-  computed: {
-    saveColor() {
-      return this.f_name == this.userName &&
-      this.f_remark == this.userRemark &&
-      this.f_birthday == this.userDatetime &&
-      this.f_order == this.userSex
-    }
-  },
-  watch: {
-    saveColor(newVal, oldVal) {
-      if (!newVal) {
-        this.bgColor.backgroundColor = '#2A91D8'
-      } else {
-        this.bgColor.backgroundColor = '#aaa'
-      }
-    }
-  }
+
 }
 </script>
 

@@ -1,69 +1,146 @@
 <template>
-  <div>
-    <x-header style="background-color:dodgerblue;color:#fff;">
-      <span>常用地址选择</span>
-      <x-icon slot="overwrite-left"
-              type="ios-arrow-left"
-              size="30"
-              @click="$router.push($router.path)"
-              style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
-    </x-header>
-    <!-- 地址 -->
-    <ul>
-      <li v-for="(item,index) in list" :key="index" @click="routerLink(item.f_address)">{{item.f_address}}</li>
-    </ul>
+  <div style="height: 100%; width: 100%; background-color: #fff;">
+    <div style="padding: 10px;">
+      <el-tree
+        :data="data"
+        :show-checkbox="true"
+        lazy
+        accordion
+        :load="loadNode"
+        @check-change="chooseCheck"
+        node-key="id"
+        ref="tree"
+        check-strictly
+        :props="defaultProps">
+      </el-tree>
+    </div>
+    <x-button class="btnsubmit" :gradients="btncolor" @click.native="senduser()" :disabled="prohibitBtn">确定选择</x-button>
   </div>
 </template>
 
 <script>
-import bus from '@/eventbus/eventbus'
+var  ElTreeGrid  = require('element-tree-grid')
 export default {
-  name: "oftenaddress",
+  name: "salesman",
+  components: {
+    'ElTreeGrid': ElTreeGrid
+  },
   data() {
     return {
-      list: []
+      btncolor: ['dodgerblue', 'dodgerblue'],
+      data: [],
+      defaultProps: {children: 'children', label: 'text'},
+      newData: [],
+      arr: [],
+      chooseUser: [], // 选择的业务员
+      prohibitBtn: false, // 禁用按钮
     }
   },
-  created() {
-    this.getOftenAddress()
+  mounted() {
+
   },
   methods: {
-    routerLink(item) {
-      bus.$emit('sendAddress', item)
-      this.$router.push(this.$router.path)
+    // 返回设置
+    senduser() {
+      if (!this.chooseUser.length) return this.$vux.toast.text('请选择地址');
+      let pd = this.chooseUser[0];
+      let id;
+      while(pd.text !== '北京市') {
+        id = pd.id
+        pd = this.$refs.tree.getNode(id).parent.data
+        this.chooseUser.unshift(pd)
+      }
+      console.log(this.chooseUser)
+      this.$store.commit('Address', this.chooseUser)
+      this.$router.push({path: this.$router.path, query:{id: this.$route.query.id}})
     },
-    // 获取常用地址
-    getOftenAddress () {
+    loadNode(node, resolve) {
+      this.getUser(node, resolve);
+    },
+    // 获取 业务员
+    getUser(node, resolve) {
+      let flag = true
+      if(this.newData.length) {
+        this.newData.forEach((item,i) => {
+          if (node.key != item.id) return false;
+          if (this.newData[i].state == 'closed') return false;
+          node.isLeaf = true
+          flag = false;
+        })
+      }// end if
+      if (!flag) return resolve([]);
+      let id = node.key || ''
+
       this.axios
-        .get(`/address/getAddressByUser.do`)
+        .get(`/org/findChildrenByIdTree.do?id=${id || 25}`)
         .then(res => {
           // console.log(res)
-          const {status, data:{rows}} = res
-          if (status == 200) {
-            this.list = rows
+          let {data} = res
+          this.newData = data
+
+          if (node.level === 0) {
+            return resolve(data);
+          } else if (node.level > 1) {
+            resolve([]);
           }
+          // const Sdata = data
+          setTimeout(() => {resolve(data);}, 500);
         })
+    },
+    // 选择多选框
+    chooseCheck(data, checked, node) {
+      console.log(data, checked);
+      if (checked) {
+        this.chooseUser.push(data)
+      }
+      if (this.chooseUser.length > 1) {
+        this.$refs.tree.setCheckedKeys([data.id])
+        this.chooseUser = [];
+        this.chooseUser.push(data)
+      }
+      console.log(this.chooseUser)
     }
   }
 }
 </script>
 
 <style scoped>
-ul {
-  margin-top: 10px;
-}
-li {
-  height: 40px;
-  line-height: 40px;
-  border-bottom: 1px solid #dfdfdf;
-  background-color: #fff;
-  box-sizing:border-box;
-  padding: 0 10px;
-  overflow-y: hidden;
-  overflow-x: auto;
-  white-space: nowrap;
-}
-li::-webkit-scrollbar {
-  display: none;
-}
+  .btnsubmit {
+    position: fixed;
+    bottom: 0;
+    z-index:999;
+    border-radius: 0px;
+  }
 </style>
+<!--chooseCheck(data, checked, node) {-->
+<!--console.log(data, checked);-->
+<!--// return false;-->
+<!--// 最后一层的数据-->
+<!--if (checked) {-->
+<!--this.chooseUser.push(data)-->
+<!--}-->
+<!--if (this.chooseUser.length > 1) {-->
+<!--this.$refs.tree.setCheckedKeys([data.id])-->
+<!--this.chooseUser = [];-->
+<!--this.chooseUser.push(data)-->
+<!--}-->
+<!--// if (data.state !== 'closed' && checked) {-->
+<!--//-->
+<!--//   if (this.chooseUser.length > 1) {-->
+<!--//     // console.log('data', data)-->
+<!--//     this.$refs.tree.setCheckedKeys([data.id])-->
+<!--//     this.chooseUser = [];-->
+<!--//     this.chooseUser.push(data)-->
+<!--//   }-->
+<!--// } else if (data.state == 'closed' && checked) {-->
+<!--//   this.$refs.tree.setCheckedKeys([data.id])-->
+<!--// } else if (data.state !== 'closed' && !checked) {-->
+<!--//   this.chooseUser.forEach((item,index) => {-->
+<!--//     if (item.id == data.id) {-->
+<!--//       console.log(this.chooseUser.splice(index, 1))-->
+<!--//     }-->
+<!--//   })-->
+<!--// }// end if-->
+<!--console.log(this.chooseUser)-->
+<!--// return false;-->
+<!--}-->

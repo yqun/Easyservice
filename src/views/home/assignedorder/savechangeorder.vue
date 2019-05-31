@@ -5,48 +5,31 @@
       <x-icon slot="overwrite-left"
               type="ios-arrow-left"
               size="30"
-              @click="$router.push({path: '/assignedorderinfo', query: {id: orderId, index: index}})"
+              @click="$router.push({path: '/assignedorderinfo', query: {id: orderId}})"
               style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
     </x-header>
     <group>
-      <x-input :show-clear="false" type="text" v-model="f_description" text-align="right" title="问题"></x-input>
-      <x-input :show-clear="false" type="text" v-model="f_customer_name" text-align="right" title="客户名称"></x-input>
-      <x-input :show-clear="false" type="text" v-model="f_customer_phnum" text-align="right" title="客户电话"></x-input>
-      <x-input :show-clear="false" type="text" v-model="f_customer_org" text-align="right" title="客户单位"></x-input>
+      <x-input title="问题　　　" :show-clear="false" v-model="f_description"></x-input>
+      <x-input title="客户名称　" :show-clear="false" disabled v-model="f_customer_name"></x-input>
+      <x-input title="客户电话　" :show-clear="false" disabled v-model="f_customer_phnum"></x-input>
+      <x-input title="客户单位　" :show-clear="false" disabled v-model="f_customer_org"></x-input>
       <!-- 业务员 -->
-      <x-input type="text"
-               v-model="usernameinfo"
-               text-align="right"
-               title="业务员"
-               @on-focus="$router.push({path: '/salesman', query: {id: orderId, index: index, userId: 1}})"></x-input>
-      <x-input type="text" disabled v-model="f_address" text-align="right" title="服务地址"></x-input>
-      <selector title="资产类别"
-                direction="rtl"
-                :options="assets"
-                v-model="assestkey"
-                placeholder="请选择资产类别">
-      </selector>
-      <selector title="工单类别"
-                direction="rtl"
-                :options="service"
-                v-model="servicekey"
-                placeholder="请选择单位">
-      </selector>
-      <x-input type="text" v-model="f_remark" text-align="right" title="备注"></x-input>
-      <x-input type="text"
-               v-model="f_name"
-               text-align="right"
-               @on-focus="$router.push({path: '/salesman', query: {id: orderId, index: index, userId: 2}})"
-               title="已指派人员">
+      <!--<x-input type="text"-->
+               <!--v-model="usernameinfo"-->
+               <!--text-align="right"-->
+               <!--title="业务员"-->
+               <!--@on-focus="$router.push({path: '/salesman', query: {id: orderId, userId: 1}})"></x-input>-->
+      <x-input title="服务地址　" disabled v-model="address">
+        <x-button slot="right" mini :gradients="btncolor" :link="`/oftenaddress?id=${orderId}`">选择</x-button>
+      </x-input>
+      <x-input title="详细地址　" :show-clear="false" v-model="f_address"></x-input>
+     <selector title="资产类别　" :options="assets" v-model="assestkey" placeholder="请选择资产类别"></selector>
+      <x-input title="备注　　　" :show-clear="false" v-model="f_remark"></x-input>
+      <x-input title="已指派人员" v-model="f_name"
+               @on-focus="$router.push({path: '/salesman', query: {id: orderId, userId: 2}})">
       </x-input>
     </group>
-    <x-button :gradients="btncolor" class="btnsubmit" @click.native="savechange()">保存修改</x-button>
-    <!-- toast -->
-    <toast v-model="toastShow"
-           :text="toastValue"
-           type="text" :time="800"
-           is-show-mask
-           position="middle" width="10em"></toast>
+    <x-button :gradients="btncolor" class="btnsubmit" @click.native="saveF_name()" :disabled="prohibitBtn">保存修改</x-button>
   </div>
 </template>
 
@@ -56,50 +39,63 @@ export default {
   data() {
     return{
       orderId: 0,
-      index:0,
-      userId: 0,// 判断业务员  还是 指派人员
       btncolor: ['dodgerblue', 'dodgerblue'],
       // 数据
       f_description: '',
       f_customer_name: '',
       f_customer_phnum: '',
       f_customer_org: '',
-      usernameinfo: '',  // 业务员
       usernameId: '', // 业务员id
+      address: '',
+      addressId: 0,
       f_address: '',
       assestkey: null,
       assets: [],
-      servicekey: null,
-      service: [],
       f_remark: '',
       f_name: '',
       f_nameId:[],
-      // toast
-      toastShow: false,
-      toastValue: ''
+      prohibitBtn: false, // 禁用按钮
     }
+  },
+  beforeRouteLeave(to, from, next) {
+    if (to.path != '/oftenaddress') {
+      this.$store.commit('Address')
+    }
+    next()
   },
   created() {
     this.getquery()
-    this.getOrderInfo()
 
     this.getassets()
-    this.getservice()
     this.getUser()
   },
+  mounted() {
+    this.getOrderInfo()
+  },
   activated() {
+    if (this.$store.state.address) {
+      const addessArr = this.$store.state.address;
+      this.addressId = addessArr[addessArr.length - 1].id
+      this.address = ''
+      addessArr.forEach(item => {
+        this.address+=item.text + '/'
+      })
+      this.address = this.address.substr(0, this.address.length - 1)
+    }
     this.userId = this.$route.query.userId
     const userArr = this.$route.query.user
     if (!userArr) return false;
     const jsonData = JSON.parse(userArr)
     // 业务员
-    if (this.userId == 1) {
-      this.usernameinfo = jsonData[0].name
-      this.usernameId = jsonData[0].id
-    }
+    // if (this.userId == 1) {
+    //   this.usernameinfo = jsonData[0].name
+    //   this.usernameId = jsonData[0].id
+    // }
     if (this.userId == 2) {
+      this.f_name = '';
+      this.f_nameId = [];
       jsonData.forEach(item => {
-        this.f_name += "　" + item.name
+        this.f_name += " " + item.name
         this.f_nameId.push(item.id)
       })
     }
@@ -108,7 +104,6 @@ export default {
     // 获取参数
     getquery() {
       this.orderId = this.$route.query.id
-      this.index = this.$route.query.index
     },
     // 获取资产类别
     getassets() {
@@ -119,26 +114,7 @@ export default {
           const {rows} = res.data
           if (!rows.length) return false;
           rows.forEach(item => {
-            this.assets.push({
-              key:item.id,
-              value:item.f_name
-            })
-          })
-        })
-    },
-    // 获取工单类别
-    getservice() {
-      this.axios
-        .get('workOrderType/findEntityByPage.do')
-        .then(res => {
-          // console.log(res)
-          const {rows} = res.data
-          if (!rows.length) return false;
-          rows.forEach(item => {
-            this.service.push({
-              key:item.id,
-              value:item.f_type_name
-            })
+            this.assets.push({key:item.id, value:item.f_name})
           })
         })
     },
@@ -147,15 +123,19 @@ export default {
       this.axios
         .get(`workOrder/findEntityById.do?id=${this.orderId}`)
         .then(res => {
-          // console.log(res)
+          console.log(res)
           const {status, data} = res
           if (status != 200) return false;
           this.f_description = data.f_description
           this.f_customer_name = data.f_customer_name
           this.f_customer_phnum = data.f_customer_phnum
           this.f_customer_org = data.f_customer_org
+          this.address = data.f_village_path
           this.f_address = data.f_address
           this.f_remark = data.f_remark
+          this.usernameId = data.f_salesman_id
+          this.assestkey = data.f_equmentType_id
+          // console.log(this.assestkey)
         })
     },
     // 获取指派人员
@@ -169,74 +149,61 @@ export default {
           if (data.length != 0) {
             data.forEach(item => {
               this.f_name += "　" + item.f_name
+              this.f_nameId.push(item.id)
             })
+
           }
         })
     },
     // 保存修改
     savechange() {
-      if (!this.usernameinfo || !this.assestkey || !this.servicekey) {
-        this.toastValue = '请填写完整信息';
-        this.toastShow = true;
-      } else {
         // 获取数据  发送请求
         // 资产类别 value
-        let assestval, servicevalue;
-        this.assets.forEach(item => {
-          if (this.assestkey == item.key) return assestval = item.value
-        })
-        this.service.forEach(item => {
-          if (this.servicekey == item.key) return servicevalue = item.value
-        })
-        const data = {
-          f_description: this.f_description, // 问题
-          f_customer_name: this.f_customer_name, // 客户名称
-          f_customer_phnum: this.f_customer_phnum,// 客户电话
-          f_customer_org: this.f_customer_org, // 客户单位
-          f_salesman_name: this.usernameinfo, // 业务员
-          f_salesman_id: this.usernameId, // 业务员
-          f_address: this.f_address, // 服务器地址
-          f_equmentType_id: this.assestkey, //资产类别
-          f_equmentType_name: assestval,
-          f_work_order_type_id: this.servicekey, // 工单类别
-          f_work_order_type: servicevalue,
-          f_remark: this.f_remark, // 备注
-        }
-        // console.log(data)
-        this.axios
-          .post('/workOrder/saveDisWorkOrder.do', data)
-          .then(res => {
-            // console.log(res)
-            if (res.data.res == 'true') {
-              this.saveF_name()
-            } else {
-              const {error} = res.data
-              this.toastValue = error;
-              this.toastShow = true;
-            }
-          })
+      let assestval;
+      this.assets.forEach(item => {
+        if (this.assestkey == item.key) return assestval = item.value
+      })
+      const data = {
+        id: this.orderId, // 工单id
+        f_description: this.f_description, // 问题
+        f_village_id: this.addressId,
+        f_address: this.f_address, // 服务地址
+        f_equmentType_id: this.assestkey, //资产类别
+        f_equmentType_name: assestval,
+        f_remark: this.f_remark, // 备注
       }
+      console.log(data)
+      this.prohibitBtn = true
+      this.axios
+        .post('workOrder/updateWorkOrderByDis.do', data)
+        .then(res => {
+          // console.log(res)
+          if (res.data.res == 'true') {
+            this.$vux.toast.text('保存成功')
+            setTimeout(() => {this.$router.push('/listItem')}, 800)
+          } else {
+            this.prohibitBtn = false
+            this.$vux.toast.text('保存失败')
+          }
 
+        })
     },
     // 指派人员 保存
     saveF_name() {
-      const data = {
-        id: this.orderId,
-        ids: this.f_nameId
-      }
+      if (!this.f_address) return this.$vux.toast.text('请选择服务地址');
+      if (!this.assestkey) return this.$vux.toast.text('请选择资产类别');
+      if (!this.f_nameId.length) return this.$vux.toast.text('请选择指派人员')
+      const data = {id: this.orderId, ids: this.f_nameId}
+      console.log(data)
       this.axios
         .post('workOrder/updateWorkers.do',data)
         .then(res => {
           // console.log(res)
           if (res.data.res == 'true') {
-            this.toastValue = '保存成功';
-            this.toastShow = true;
-            setTimeout(() => {
-              this.$router.push('/')
-            }, 800)
+            this.savechange()
           } else {
-            this.toastValue = '保存失败';
-            this.toastShow = true;
+            this.prohibitBtn = false
+            this.$vux.toast.text('保存失败');
           }
         })
     }

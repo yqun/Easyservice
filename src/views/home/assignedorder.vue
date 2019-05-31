@@ -1,9 +1,9 @@
 <template>
-  <div class="content">
+  <div>
     <!-- 导航 -->
-    <nav-bar @sendIndex="getIndex" wait="待指派" success="已指派" cancel="已取消" :index="index"></nav-bar>
+    <nav-bar wait="待指派" success="已指派" cancel="已取消"></nav-bar>
     <!-- 内容 -->
-    <router-view :index="index" :key="this.index"></router-view>
+    <router-view :key="$store.state.navIndex" class="content_list"></router-view>
   </div>
 </template>
 
@@ -12,28 +12,24 @@ export default {
   name: "assignedorder",
   data() {
     return {
-      index: 0,
+
     }
   },
-  created() {
-    this.getquery()
+  beforeRouteLeave(to, from, next) {
+    if (to.path != '/assignedorderinfo') this.$store.commit('NavIndex', 0);
+    next()
   },
   methods: {
-    // 获取参数
-    getquery() {
-      this.index = this.$route.query.index || 0
-    },
-    getIndex(index) {
-      this.index = index
-    },
+
   },
 }
 </script>
 
 <style scoped>
-@import '../../assets/css/assignedperformlist.css';
-.content {
-  padding-bottom: 40px;
+.content_list {
+  height: 100%;
+  width: 100%;
   box-sizing: border-box;
+  padding: 0px 10px;
 }
 </style>

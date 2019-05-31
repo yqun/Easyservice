@@ -5,17 +5,9 @@
       <x-icon slot="overwrite-left"
               type="ios-arrow-left"
               size="30"
-              @click="$router.push({path: '/performorderinfo', query: {index: index, id: orderId}})"
+              @click="$router.push({path: '/performorderinfo', query: {id: orderId}})"
               style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
     </x-header>
-    <!-- 预计完成时间 -->
-    <group>
-      <datetime
-        v-model="finishDate"
-        format="YYYY-MM-DD HH:mm"
-        title="预计完成时间">
-      </datetime>
-    </group>
     <!-- 工作内容 -->
     <group>
       <x-textarea placeholder="工作内容" v-model="workContent"></x-textarea>
@@ -28,19 +20,14 @@
     <!-- 图片上传 -->
     <group>
       <!-- 图片展示 -->
-      <div v-transfer-dom>
-        <previewer :list="filesImg"
-                   ref="previewer"
-                   :options="options">
-        </previewer>
-      </div>
+      <div v-transfer-dom><previewer :list="filesImg" ref="previewer" :options="options"></previewer></div>
       <!-- vux-uploader 图片上传 -->
       <uploader
         :max="5"
         :handle-click="false"
         :autoUpload="true"
         :show-header="true"
-        :upload-url="uploadUrl"
+        :upload-url="axiosUrl + 'system/uploadFile.do?token=' + token"
         name="file"
         :images="images"
         size="small"
@@ -48,39 +35,16 @@
         @preview="show"
       ></uploader>
     </group>
-    <!-- 交通费用，行驶里程 -->
-    <group>
-      <x-input title="交通费用(元)" placeholder="交通费用(元)" :show-clear="false" v-model="transportationCost"></x-input>
-      <x-input title="行驶里程(公里)" placeholder="行驶里程(公里)" :show-clear="false" v-model="mileage"></x-input>
-    </group>
     <!-- 工单完成情况， 备注 -->
     <group title="工单完成情况">
-      <checker v-model="radio"
-               class="radio"
-               default-item-class="radio-item"
-               selected-item-class="radio-item-selected">
+      <checker v-model="radio" class="radio" default-item-class="radio-item" selected-item-class="radio-item-selected">
         <div><checker-item value="未完成"></checker-item>未完成</div>
         <div><checker-item value="已完成"></checker-item>已完成</div>
       </checker>
       <!-- 备注 -->
-      <x-textarea :max="200"
-                  v-model="textareaval"
-                  placeholder="备注"
-                  :show-counter="false"
-                  :rows="5" :cols="30">
-      </x-textarea>
+      <x-textarea :max="200" v-model="textareaval" placeholder="备注" :show-counter="false"></x-textarea>
     </group>
-    <x-button :gradients="btncolor"
-              class="btnsubmit"
-              @click.native="submitData()">
-      提交
-    </x-button>
-    <!-- toast -->
-    <toast v-model="toastShow"
-           :text="toastValue"
-           type="text" :time="800"
-           is-show-mask
-           position="middle" width="10em"></toast>
+    <x-button :gradients="btncolor" class="btnsubmit" @click.native="submitData()" :disabled="prohibitBtn">提交</x-button>
   </div>
 </template>
 
@@ -90,29 +54,17 @@ import Uploader from '../../../components/vux-uploader/src/main'
 import { TransferDom } from 'vux'
 export default {
   name: "writeworkcontent",
-  components: {
-    Uploader,
-  },
-  directives: {
-    TransferDom,
-  },
+  components: {Uploader,},
+  directives: {TransferDom,},
   data() {
     return {
       be2333: function (value) {
-        return {
-          valid: value/0.5%1 === 0,
-          msg: '请输入0.5的整数倍'
-        }
+        return {valid: value/0.5%1 === 0, msg: '请输入0.5的整数倍'}
       },
       token: '',
-      index: 0,
       orderId: 0,
-      id: 0, // 工单进度id
       btncolor: ['dodgerblue', 'dodgerblue'],
-      finishDate: '', // 完成时间
       workDate: 0, // 工时
-      transportationCost: '', // 交通费用
-      mileage: '', // 行驶里程
       radio: '未完成', //完成情况
       textareaval: '', // 备注
       workContent: '', // 工作内容
@@ -123,127 +75,61 @@ export default {
       options: {
         getThumbBoundsFn(index) {
           let thumbnail = document.querySelectorAll(".previewer-demo-img")[index];
-
           let pageYScroll = window.pageYOffset || document.documentElement.scrollTop;
-
           let rect = thumbnail.getBoundingClientRect();
-
           return { x: rect.left, y: rect.top + pageYScroll, w: rect.width };
         }
       }, // options
-      toastShow: false,
-      toastValue: '',
+      prohibitBtn: false, // 禁用按钮
     }
   },
-  computed: {
-    uploadUrl() {
-      return `${this.axiosUrl}system/uploadFile.do?token=${this.token}`
-    }
-  },
-  created() {
-    this.token = window.sessionStorage.getItem('token')
+  mounted() {
     this.getquery()
-    this.getwritedinfo()
   },
   methods: {
     // 获取参数
     getquery() {
-      this.index = this.$route.query.index
       this.orderId = this.$route.query.id
-      const date = this.$route.query.date
-      if (date) {
-        this.finishDate = date
-      }
-    },
-    // 获取用户之前填写的数据
-    getwritedinfo() {
-      this.axios
-        .get(`orderLog/findOrderLogByWorkOrderAndUserToday.do?f_work_order_id=${this.orderId}`)
-        .then(res => {
-          console.log(res)
-          const {orderLog} = res.data
-          if (res.data.res == 1) {
-            this.id = orderLog.id
-            this.workContent = orderLog.f_work_content
-            this.workDate = orderLog.f_work_house, // 工时
-            this.transportationCost = orderLog.f_farse, // 交通费用
-            this.mileage = orderLog.f_mileage, //行驶里程
-            this.radio = orderLog.f_finished? '已完成':'未完成', // 工单完成情况
-            // this.filesId = orderLog.ids, // 图片id
-            this.textareaval = orderLog.f_remark// 备注
-          }
-        })
+      this.token = window.localStorage.getItem('token')
     },
     // 展示 图片
     show (index) {
-      // console.log(index)
       this.$refs.previewer.show(index)
     },
     // 提交表单
     submitData() {
+      // 判断  必选项
+      if (!this.workContent)  return this.$vux.toast.text('请填写工作内容');
+      // 判断 工时大于0  并且是0.5的倍数
+      if (this.workDate <= 0 || this.workDate/0.5%1 !== 0) return this.$vux.toast.text('请正确输入工时');
+      if (!this.radio)  return this.$vux.toast.text('请填写工单完成情况');
       // 获取图片id
-      this.images.forEach(item => {
-        // console.log(item)
-        this.filesId.push(item.id)
-      })
+      this.images.forEach(item => {this.filesId.push(item.id)})
       // console.log(this.filesId)
       const data = {
-        id: this.id,
-        f_expected_date: this.finishDate, // 预计完成时间
+        f_work_order_id: this.orderId,
         f_work_content: this.workContent, // 工作内容
         f_work_house: this.workDate, // 工时
-        f_farse: this.transportationCost, // 交通费用
-        f_mileage: this.mileage, //行驶里程
         f_completed: this.radio, // 工单完成情况
         ids: this.filesId, // 图片id
         f_remark: this.textareaval, // 备注
       }
-      // console.log(data)
-      // 判断  必选项
-      if (!this.finishDate) {
-        this.toastShow = true
-        this.toastValue = '请填写预计完成时间'
-        return false;
-      }
-      if (!this.radio) {
-        this.toastShow = true
-        this.toastValue = '请填写工单完成情况'
-        return false;
-      }
-      // 判断 工时大于0  并且是0.5的倍数
-      if (this.workDate >= 0 && this.workDate/0.5%1 === 0) {
-        // 判断交通费用和行驶里程
-        if (this.mileage && this.transportationCost) {
-          this.toastShow = true
-          this.toastValue = '交通费用和行驶里程只能任选其一'
-        } else {
-          this.sendData(data)
-
-        } // end if
-      } else {
-        this.toastShow = true
-        this.toastValue = '请正确输入工时'
-      } // end if
+      this.sendData(data)
     }, // submitData
     // 向后台发送数据
     sendData(data) {
+      this.prohibitBtn = true;
       this.axios
         .post(`orderLog/saveOrderLog.do`, data)
         .then(res => {
-          if (!res.data.res) {
-            return false;
+          console.log(res)
+          if (res.data.res == false) {
+            this.prohibitBtn = false;
+            this.$vux.toast.text('提交失败')
+          } else {
+            this.$vux.toast.text('提交成功')
+            setTimeout(() => {this.$router.push({path:'/performlist'})}, 800)
           }
-          this.toastShow = true
-          this.toastValue = '提交成功'
-          setTimeout(() => {
-            // 页面跳转
-            this.$router.push({
-              path:'/performlist',
-              query: {
-                index: this.index
-              }
-            })
-          }, 800) // end setTimeout
         })
     }
   }

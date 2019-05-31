@@ -5,7 +5,7 @@
       <x-icon slot="overwrite-left"
               type="ios-arrow-left"
               size="30"
-              @click="$router.push({path: '/myorderlistitem', query: {id: id, index: index}})"
+              @click="$router.push({path: '/myorderlistitem', query: {id: id}})"
               style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
     </x-header>
     <group title="基本信息" >
@@ -15,27 +15,21 @@
       </div>
       <x-input type="text" disabled :value="orderInfo.f_work_order_state" text-align="right" title="工单状态"></x-input>
       <x-input type="text" disabled :value="orderInfo.f_handler_org_name" text-align="right" title="处理单位名称"></x-input>
-      <x-input v-if="false" type="text" disabled :value="orderInfo.f_creater_name" text-align="right" title="创建人"></x-input>
-      <x-input v-if="false" type="text" disabled :value="orderInfo.f_create_time" text-align="right" title="创建时间"></x-input>
+      <x-input v-if="false" type="text" disabled :value="orderInfo.f_org_phnum" text-align="right" title="联系方式"></x-input>
       <x-input type="text" disabled :value="orderInfo.f_customer_name" text-align="right" title="客户名称"></x-input>
       <x-input type="text" disabled :value="orderInfo.f_customer_phnum" text-align="right" title="客户电话"></x-input>
-      <x-input type="text" disabled :value="orderInfo.f_customer_org" text-align="right" title="客户单位"></x-input>
-      <x-input type="text" disabled :value="orderInfo.f_sn_no" text-align="right" title="SN号码"></x-input>
-      <x-input type="text" disabled :value="orderInfo.f_salesman_name" text-align="right" title="业务员"></x-input>
-      <x-input type="text" disabled :value="orderInfo.f_project_number" text-align="right" title="项目编号"></x-input>
       <x-input type="text" disabled :value="orderInfo.f_address" text-align="right" title="服务地址"></x-input>
       <x-input type="text" disabled :value="orderInfo.f_work_order_type" text-align="right" title="工单类别"></x-input>
       <x-input type="text" disabled :value="orderInfo.f_equmentType_name" text-align="right" title="资产类别"></x-input>
-      <x-input v-if="false" type="text" disabled :value="f_confirmed" text-align="right" title="是否确认"></x-input>
-      <x-input v-if="false" type="text" disabled :value="orderInfo.f_confirm_time" text-align="right" title="确认时间"></x-input>
-      <x-input v-if="false" type="text" disabled :value="f_name" text-align="right" title="指派人员"></x-input>
       <x-input type="text" disabled :value="orderInfo.f_remark" text-align="right" title="备注"></x-input>
     </group>
-    <group title="进度信息" style="margin-bottom: 40px;" v-if="index != 0">
+    <group title="进度信息">
       <timeline class="timeline-demo" v-for="(item,index) in count" :key="index">
-        <timeline-item v-for="(i,index) in item" :key="index">
-          <p :class="[index === 0 ? 'recent' : '']">{{i}}</p>
-        </timeline-item>
+        <timeline-item><p class="recent">{{item.name}}</p></timeline-item>
+        <timeline-item><p>{{item.f_work_house}}</p></timeline-item>
+        <timeline-item><p>{{item.f_work_content}}</p></timeline-item>
+        <timeline-item><p>{{item.f_remark}}</p></timeline-item>
+        <img :src="i.imagesUrl" alt="" v-for="i in item.images" :key="i.id" style="width: 100%;">
       </timeline>
     </group>
   </div>
@@ -47,8 +41,8 @@ export default {
   data () {
     return {
       id: 0,
-      index: 0,
       orderId: 0,
+      token: '',
       orderInfo: {},
       f_name: '', //指派人员
       count: [],
@@ -74,21 +68,21 @@ export default {
     // 获取参数
     getquery() {
       this.id = this.$route.query.id
-      this.index = this.$route.query.index
       this.orderId = this.$route.params.id
+      this.token = window.localStorage.getItem('token')
     },
     // 获取工单详情
     getOrderInfo() {
       this.axios
         .get(`workOrder/findEntityById.do?id=${this.orderId}`)
         .then(res => {
-          console.log(res)
+          // console.log(res)
           const {status, data} = res
           if (status != 200) return false;
           this.orderInfo = data
           if (data.imgIds) {
             data.imgIds.forEach(item => {
-              item.imgUrl = `${this.axiosUrl}system/getImage.do?id=${item.id}`
+              item.imgUrl = `${this.axiosUrl}system/getImage.do?id=${item.id}&token=${this.token}`
             })
           } // end if
 
@@ -114,23 +108,24 @@ export default {
       this.axios
         .get(`workOrder/findWorkOrerLogs.do?id=${this.orderId}`)
         .then(res => {
-          console.log(res)
+          // console.log(res)
           const {status, data} = res
           if (status != 200) return false;
           if (data.length != 0) {
             data.forEach(item => {
-              this.count.push([
-                item.f_handler_name +'　'+ item.f_handle_time,
-                '出发时间：' + item.f_start_date,
-                '到达时间：' + item.f_arrive_date,
-                '离开时间：' + item.f_leave_date,
-                '返回时间：' + item.f_return_date,
-                '交通费用：' + item.f_farse,
-                '行驶里程：' + item.f_mileage,
-                '工时：' + item.f_work_house + '(小时)',
-                '备注：' + item.f_remark,
-                item.f_work_content
-              ])
+              // 处理图片路径
+              if (item.images) {
+                item.images.forEach(item => {
+                  item.imagesUrl = `${this.axiosUrl}system/getImage.do?id=${item.id}&token=${this.token}`
+                })
+              }
+              this.count.push({
+                name: item.f_handler_name + '　' + item.f_handle_time,
+                f_work_house: '工时：'   + (item.f_work_house  || 0)+ '(小时)',
+                f_work_content:  (item.f_work_content || ''),
+                f_remark: '备注：'       + (item.f_remark  || ''),
+                images: item.images
+              })
             })
           }// end if
         })

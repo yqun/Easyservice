@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="height: 100%; width: 100%; background-color: #fff;">
     <div style="padding: 10px;">
       <el-tree
         :data="data"
@@ -12,13 +12,7 @@
         :props="defaultProps">
       </el-tree>
     </div>
-    <x-button class="btnsubmit" :gradients="btncolor" @click.native="senduser()">确定选择</x-button>
-    <!-- toast -->
-    <toast v-model="toastShow"
-           :text="toastValue"
-           type="text" :time="800"
-           is-show-mask
-           position="middle" width="10em"></toast>
+    <x-button class="btnsubmit" :gradients="btncolor" @click.native="senduser()" :disabled="prohibitBtn">确定选择</x-button>
   </div>
 </template>
 
@@ -32,7 +26,6 @@ export default {
   data() {
     return {
       orderId: 0,
-      index: 0,
       userId: 0, // 判断进来的是通过业务员按钮 还是
       btncolor: ['dodgerblue', 'dodgerblue'],
       data: [],
@@ -42,9 +35,7 @@ export default {
       },
       newData: [],
       chooseUser: [], // 选择的业务员
-      // toast
-      toastShow: false,
-      toastValue: ''
+      prohibitBtn: false, // 禁用按钮
     }
   },
   created() {
@@ -57,29 +48,51 @@ export default {
     // 获取参数
     getquery() {
       this.orderId = this.$route.query.id
-      this.index = this.$route.query.index
       this.userId = this.$route.query.userId
     },
     // 返回设置
     senduser() {
-      if (this.chooseUser.length > 1 && this.userId == 1) return this.toastShow = true; this.toastValue = '最多选择一个业务员'
-      let userArr = [];
-      this.chooseUser.forEach(item => {
-        if (item.state == "closed") return false;
-        userArr.push({name: item.text, id: item.id})
-      })
-      const jsonData = JSON.stringify(userArr)
-      console.log(jsonData)
-      // 页面跳转
-      this.$router.push({
-        path: this.$router.path,
-        query: {
-          id: this.orderId,
-          index: this.index,
-          user: jsonData,
-          userId: this.userId
-        }
-      })
+      // 工单类别
+      if (this.userId == 3) {
+        this.sendOrderType()
+      }
+
+      // 业务员
+      if (this.userId == 1 || this.userId == 2) {
+        if (this.chooseUser.length > 1 && this.userId == 1) return this.$vux.toast.text('最多选择一个业务员');
+        const jsonData = JSON.stringify(this.chooseUser)
+        // console.log(jsonData)
+        // 页面跳转
+        this.$router.push({
+          path: this.$router.path,
+          query: {id: this.orderId, user: jsonData, userId: this.userId}
+        })
+      }
+
+    },
+    // 判断 是工单类别 发送数据
+    sendOrderType() {
+      if (this.chooseUser.length == 0) return false;
+      let data = []
+      this.chooseUser.forEach(item => {data.push(item.id)})
+      this.prohibitBtn = true;
+      this.axios
+        .post(`workOrder/updateWordOrderType.do?id=${this.orderId}&typeIds=${data}`)
+        .then(res => {
+          // console.log(res)
+          if (res.data.res == 1) {
+            this.$vux.toast.text('指定工单类型成功')
+            setTimeout(() => {
+              this.$router.push({
+                path: this.$router.path,
+                query: {id: this.orderId}
+              })
+            }, 800)
+          } else {
+            this.prohibitBtn = false;
+            this.$vux.toast.text(res.data.error || '指定工单类型失败')
+          }
+        })
     },
     loadNode(node, resolve) {
       this.getUser(node, resolve);
@@ -97,9 +110,18 @@ export default {
       }// end if
       if (!flag) return resolve([]);
       let id = node.key || ''
+      // 判断是 业务员还是工单类型
+      console.log(this.userId)
+      let url;
+      if (this.userId == 1 || this.userId == 2) {
+        url = 'org/findOrgsAndUsers.do'
+      } else if (this.userId == 3) {
+        url = 'workOrderType/findWorkOrderTypesByPage.do'
+      }
       this.axios
-        .get(`org/findOrgsAndUsers.do?id=${id || ''}`)
+        .get(`${url}?id=${id || ''}`)
         .then(res => {
+          console.log(res)
           let {data} = res
           this.newData = data
           if (node.level === 0) {
@@ -108,18 +130,19 @@ export default {
             resolve([]);
           }
           // const Sdata = data
-          setTimeout(() => {
-            resolve(data);
-          }, 500);
+          setTimeout(() => {resolve(data);}, 500);
         })
     },
     // 选择多选框
     chooseCheck() {
       this.chooseUser = this.$refs.tree.getCheckedNodes()
-      if (this.chooseUser.length > 1 && this.userId == 1) {
-        this.toastShow = true
-        this.toastValue = '最多选择一个业务员'
-      }
+      let userArr = [];
+      this.chooseUser.forEach(item => {
+        if (item.state == "closed") return false;
+        userArr.push({name: item.text, id: item.id})
+      })
+      this.chooseUser = userArr
+      if (this.chooseUser.length > 1 && this.userId == 1) return this.$vux.toast.text('最多选择一个业务员');
     }
   }
 }

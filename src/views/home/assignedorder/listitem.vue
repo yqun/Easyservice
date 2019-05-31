@@ -1,31 +1,32 @@
 <template>
-  <scroller lock-x height="100%"
-            ref="scroller"
-            @on-scroll-bottom="onScrollBottom"
-            :scroll-bottom-offst="200"
-            style="box-sizing: border-box; padding-top: 0px;padding-bottom: 15px;">
-    <ul>
-      <li class="clearfix"
-          @click="$router.push({path: `/assignedorderinfo`, query: {index: index, id:item.id}})"
-          v-for="(item) in list" :key="item.id">
-        <div class="item-content">
-          <h3>问题：{{item.f_description}}</h3>
-          <p>客户：{{item.f_customer_name}}({{item.f_customer_phnum}})</p>
-          <p>地址：{{item.f_address}}</p>
-          <span>{{item.f_create_time}}</span>
-        </div>
-        <div class="item-state">
-          {{item.f_work_order_state}}
-        </div>
-      </li>
-    </ul>
-  </scroller>
+  <div>
+    <scroller lock-x height="100%"
+              ref="scroller"
+              @on-scroll-bottom="onScrollBottom"
+              :scroll-bottom-offst="200"
+              style="box-sizing: border-box; padding-top: 0px;padding-bottom: 15px;">
+      <ul>
+        <li class="clearfix"
+            @click="$router.push({path: `/assignedorderinfo`, query: {id:item.id}})"
+            v-for="(item) in list" :key="item.id">
+          <div class="item-content">
+            <h3>问题：{{item.f_description}}</h3>
+            <p>客户：{{item.f_customer_name}}({{item.f_customer_phnum}})</p>
+            <p>地址：{{item.f_address}}</p>
+            <span>{{item.f_create_time}}</span>
+          </div>
+          <div class="item-state">
+            {{item.f_work_order_state}}
+          </div>
+        </li>
+      </ul>
+    </scroller>
+  </div>
 </template>
 
 <script>
 export default {
   name: "listitem",
-  props:['index'],
   data() {
     return {
       list: [],
@@ -36,12 +37,17 @@ export default {
       flag: true,
     }
   },
+  computed: {
+    index() {
+      return this.$store.state.navIndex;
+    }
+  },
   watch: {
     index(newVal, oldVal) {
       this.getIndex(newVal)
     }
   },
-  created () {
+  mounted() {
     this.getIndex(this.index)
   },
   methods: {
@@ -67,7 +73,7 @@ export default {
         this.flag = true
       }, 2000)
     },
-    // 获取带指派
+    // 获取待指派
     getWait() {
       this.axios
         .get(`/workOrder/findWorkOrderByPage.do?f_dispatch=${this.status}&page=${this.page}&rows=${this.rows}`)
@@ -76,9 +82,7 @@ export default {
           const {status} = res
           if (status !== 200) return false;
           const {rows, total} = res.data
-          rows.forEach(item => {
-            this.list.push(item)
-          })
+          this.list = this.list.concat(rows)
           this.pageTotal = Math.ceil(total/10)
           this.page++;
         })

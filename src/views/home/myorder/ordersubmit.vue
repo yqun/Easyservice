@@ -1,11 +1,8 @@
 <template>
-  <div class="fixedpadding">
+  <div class="fixedpadding" :key="index">
     <x-header style="background-color:dodgerblue;color:#fff;">
       <span>工单提交</span>
-      <x-icon slot="overwrite-left"
-              type="ios-arrow-left"
-              size="30"
-              @click="routerLink()"
+      <x-icon slot="overwrite-left" type="ios-arrow-left" size="30" @click="routerLink()"
               style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
     </x-header>
     <group>
@@ -23,20 +20,11 @@
       </selector>
     </group>
     <p class="person" v-for="item in serviceStaffers" :key="item.id">{{item.f_name}} {{item.f_phone_num}}</p>
-    <group>
-      <x-textarea :max="100"
-                  v-model="questvalue"
-                  placeholder="问题描述">
-      </x-textarea>
-    </group>
     <!-- 上传图片 -->
     <group>
       <!-- 查看图片 -->
       <div v-transfer-dom>
-        <previewer :list="filesImg"
-                   ref="previewer"
-                   :options="options">
-        </previewer>
+        <previewer :list="filesImg" ref="previewer" :options="options"></previewer>
       </div>
       <!-- vux-uploader 图片上传 -->
       <uploader
@@ -44,7 +32,7 @@
         :handle-click="false"
         :autoUpload="true"
         :show-header="true"
-        :upload-url="uploadUrl"
+        :upload-url= 'axiosUrl + "system/uploadFile.do?token=" + token'
         name="file"
         :images="images"
         size="small"
@@ -52,50 +40,30 @@
         @preview="show"
       ></uploader>
     </group>
-    <group>
-      <div style="float: left; width: 65%">
-        <x-textarea placeholder="服务地址" v-model="addressvalue" :rows="2" :cols="10"></x-textarea>
-      </div>
-      <div style="float: left; width: 35%">
-        <x-button :gradients="btncolor" style="margin-top: 13px;" link="/oftenaddress">常用地址</x-button>
-      </div>
-    </group>
     <group style="margin-bottom: 42px;">
-      <x-textarea placeholder="备注" v-model="remarksvalue" :rows="2" :cols="10"></x-textarea>
+      <x-textarea title="备注" v-model="remarksvalue" :rows="5" :cols="10"></x-textarea>
     </group>
-    <x-button :gradients="btncolor" class="btnsubmit" @click.native="orderinfo()">提交</x-button>
-    <!-- toast -->
-    <toast v-model="toastShow"
-           :text="toastValue"
-           type="text" :time="800"
-           is-show-mask
-           position="middle" width="10em"></toast>
+    <x-button :gradients="btncolor" class="btnsubmit" @click.native="orderinfo()" :disabled="prohibitBtn">提交</x-button>
   </div>
 </template>
 
 <script>
-// import Uploader from 'vux-uploader'
 import Uploader from '../../../components/vux-uploader/src/main'
 import { TransferDom } from 'vux'
-import bus from '@/eventbus/eventbus'
 export default {
-  components: {
-    Uploader,
-  },
-  directives: {
-    TransferDom
-  },
+  components: {Uploader,},
+  directives: {TransferDom},
   name: "ordersubmit",
   data() {
     return {
+      token: '',
+      index: 0,
       assetskey: null,
       assets: [],
       servicekey: null,
       service: [],
       serviceStaffers: [], // 公司负责人数组
-      questvalue: '',
       btncolor: ['dodgerblue', 'dodgerblue'],
-      addressvalue: '',
       remarksvalue: '',
       // 图片上传配置
       options: {
@@ -106,12 +74,11 @@ export default {
           return {x: rect.left, y: rect.top + pageYScroll, w: rect.width}
         }
       },
-      toastShow: false,
-      toastValue: '',
       /* vux-uploader */
       images: [],
       filesId: [],
       filesImg: [],
+      prohibitBtn: false, // 禁用按钮
     }
   },
   watch: {
@@ -128,19 +95,12 @@ export default {
       })
     },
   },
-  computed: {
-    uploadUrl() {
-      return `${this.axiosUrl}system/uploadFile.do?token=${this.token}`
-    }
-  },
   created() {
-    this.token = window.sessionStorage.getItem('token')
+    this.token = window.localStorage.getItem('token')
     this.getassets()
   },
   activated () {
-    bus.$on('sendAddress', address => {
-      this.addressvalue = address
-    })
+    this.$forceUpdate();
   },
   methods: {
     routerLink() {
@@ -190,6 +150,8 @@ export default {
     },
     // 点击提交按钮
     orderinfo() {
+      if (!this.assetskey) return this.$vux.toast.text('请填写资产类别');
+      if (!this.servicekey) return this.$vux.toast.text('请填写服务单位');
       // service
       // assets
       let servicevalue,assetsvalue;
@@ -201,7 +163,7 @@ export default {
       })
       // 获取图片id
       this.images.forEach(item => {
-        console.log(item)
+        // console.log(item)
         this.filesId.push(item.id)
       })
       const data = {
@@ -210,38 +172,27 @@ export default {
         f_equmentType_name: assetsvalue,
         f_handler_org_id: this.servicekey,
         f_handler_org_name: servicevalue,
-        f_description: this.questvalue,
-        f_address: this.addressvalue,
         f_remark: this.remarksvalue,
       }
-      if (!this.questvalue || !this.assetskey || !this.servicekey) {
-        this.toastShow = true
-        this.toastValue = '请填写完整的信息'
-      } else {
-        this.axios
-          .post('/workOrder/saveCustomerWorkOrder.do', data)
-          .then(res => {
-            // console.log(res)
-            if(res.data.res = true) {
-              this.toastShow = true
-              this.toastValue = '提交完成'
-              setTimeout(() => {
-                this.$router.push('/')
-              }, 800)
-            } else {
-              const {error} = res.data
-              this.toastShow = true
-              this.toastValue = error
-            }
-          })
-      }
-
+      this.prohibitBtn = true
+      this.axios
+        .post('/workOrder/saveCustomerWorkOrder.do', data)
+        .then(res => {
+          console.log(res)
+          if(res.data.res != 'true') {
+            this.prohibitBtn = false
+            this.$vux.toast.text(res.data.error);
+          } else {
+            this.$vux.toast.text('提交完成')
+            setTimeout(() => {this.$router.push('/')}, 800)
+          }
+        })
     }
   }
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .vux-header {
   position:fixed;
   top: 0;

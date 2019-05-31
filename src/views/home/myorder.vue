@@ -2,12 +2,12 @@
   <div class="content">
     <i class="iconfont icon-jiahao" @click="$router.push('/ordersubmit')"></i>
     <!-- 导航 -->
-    <nav-bar @sendIndex="getIndex" :index="index"></nav-bar>
+    <nav-bar></nav-bar>
     <!-- 内容 -->
-    <ul>
+    <ul class="content_list">
       <li class="item-content"
           v-for="item in list" :key="item.id"
-          @click="routerLink(item.id)">
+          @click="$router.push({path: '/myorderlist', query: {id: item.id,}})">
         {{item.f_name}}
       </li>
     </ul>
@@ -21,32 +21,17 @@ export default {
   name: "myorder",
   data() {
     return {
-      index: 0,
       list: [],
     }
   },
+  beforeRouteLeave(to, from, next) {
+    if (to.path != '/myorderlistitem' && to.path != '/ordersubmit') this.$store.commit('NavIndex', 0);
+    next()
+  },
   created() {
-    this.getquery()
     this.getMyorder()
   },
   methods: {
-    // 获取参数index
-    getquery() {
-      this.index = this.$route.query.index || 0
-    },
-    getIndex(index) {
-      this.index = index
-    },
-    routerLink(id) {
-      // console.log(id)
-      this.$router.push({
-        path: '/myorderlist',
-        query: {
-          id: id,
-          index: this.index
-        }
-      })
-    },
     // 获取我的工单信息
     getMyorder() {
       this.axios
@@ -82,6 +67,7 @@ i.iconfont.icon-jiahao {
   padding: 0 10px;
   color: #ac5978;
   line-height: 40px;
+  list-style: none;
 }
 .add {
   display: block;

@@ -5,103 +5,206 @@
       <x-icon slot="overwrite-left"
               type="ios-arrow-left"
               size="30"
-              @click="$router.push({path: '/myorderlistitem', query: {index: index, id:id}})"
+              @click="$router.push({path: '/myorderlistitem', query: {id:id}})"
               style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
     </x-header>
-    <checker v-model="radio"
-             class="radio"
-             default-item-class="radio-item"
-             selected-item-class="radio-item-selected">
-      <div><checker-item value="满意"></checker-item>满意</div>
-      <div><checker-item value="不满意"></checker-item>不满意</div>
-      <div><checker-item value="很不满意"></checker-item>很不满意</div>
-    </checker>
+    <group>
+      <selector title="服务人员" :options="servicePersonalList"
+                placeholder="请选择服务人员"
+                v-model="servicePersonal" @on-change="chooseServiceUnit">
+      </selector>
+      <x-input class="service" title="服务单位" v-model="serviceUnit" disabled></x-input>
+    </group>
+    <evaluate :attitude="attitude" :response="response" :solve="solve" :btn="btn" :state="state"></evaluate>
+    <div v-if="!btn">
+      <group :title="`服务态度　${attitude}`" v-if="state*1"> <!--服务态度-->
+        <cell title=" " primary="content">
+          <range v-model="attitude" minHTML="不耐烦(0)" maxHTML="热情服务(100)"></range>
+        </cell>
+      </group>
+      <group :title="`响应速度　${response}`" v-if="state*1">
+        <cell title=" " primary="content">
+          <range v-model="response" minHTML="拖沓(0)" maxHTML="迅速及时(100)"></range>
+        </cell>
+      </group>
+      <group :title="`解决程度　${solve}`" v-if="state*1">
+        <cell title=" " primary="content">
+          <range v-model="solve" minHTML="未解决(0)" maxHTML="彻底解决(100)"></range>
+        </cell>
+      </group>
+    </div>
+
     <group title="附言">
       <x-textarea :max="200"
                   v-model="textareaval"
-                  placeholder="附言"
+                  title="附言"
                   :show-counter="false"
+                  :readonly="btn"
                   :rows="5" :cols="30">
       </x-textarea>
     </group>
-    <x-button :gradients="btncolor" class="btn" @click.native="submitBtn()">提交</x-button>
-    <!-- toast -->
-    <toast v-model="toastShow"
-           :text="toastValue"
-           type="text"
-           :time="800"
-           is-show-mask
-           position="middle"
-           width="10em">
-    </toast>
+    <x-button class="btn" @click.native="submitBtn()" :disabled="prohibitBtn">提交</x-button>
   </div>
 </template>
 
 <script>
+import evaluate from '../../../components/evaluate'
+import { Range, Cell  } from 'vux'
 export default {
   name: "estimate",
+  components: {Range, Cell, evaluate },
   data() {
     return {
       id: 0,
-      index: 0,
       orderId: 0,
-      radio: '满意',
-      textareaval: '',
-      appraise: {}, //评价
+      state: 0,
+
+      servicePersonal: '',
+      servicePersonalList: [],
+      serviceUnit: '',
+      serviceUnitList: [],
       btncolor: ['dodgerblue', 'dodgerblue'],
-      toastShow: false,
-      toastValue: ''
+      prohibitBtn: false, // 禁止按钮
+      attitude: 0, // 服务态度
+      response: 0, // 响应速度
+      solve: 0, // 解决程度
+      textareaval: '',
+      btn: false, // 禁止评价
+      Aattitude: 0,
+      Aresponse: 0,
+      Asolve: 0,
     }
   },
-  created() {
+  mounted() {
     this.getquery()
-    this.setevaluate()
+    this.getAppraise()
   },
   methods: {
     // 获取参数
     getquery() {
       this.id = this.$route.query.id
-      this.index = this.$route.query.index
       this.orderId = this.$route.query.orderId
-      this.appraise = this.$route.query.appraise
+      this.state = this.$route.query.state
     },
-    // 渲染页面
-    setevaluate() {
-      this.radio = this.appraise.f_appraise || '满意'
-      this.textareaval = this.appraise.f_content || ''
+    // 获取评价
+    getAppraise() {
+      if (this.state == 1) {
+        this.axios
+          .get(`appraise/findUserAndAppraiseByWorkOrder.do?id=${this.orderId}`)
+          .then(res => {
+            // console.log(res)
+            const {users} = res.data
+            if (!users || !users.length) return false;
+            users.forEach(item => {
+              this.servicePersonalList.push({
+                key: item.id,
+                value: item.f_name,
+                serviceUnit: item.f_unit_name,
+                appraise: item.appraise
+              })
+            })
+          })
+      } else if (this.state == 0) {
+        this.axios
+          .get(`workOrder/getWorkersByWorkOrder.do?id=${this.orderId}`)
+          .then(res => {
+            // console.log(res)
+            const {data} = res
+            if (!data || !data.length) return false;
+            data.forEach(item => {
+              this.servicePersonalList.push({
+                key: item.id,
+                value: item.f_name,
+                serviceUnit: item.f_org_name,
+              })
+            })
+          })
+      }
+
+    },
+    chooseServiceUnit (value) {
+      const servicePersonalInfo = this.servicePersonalList.filter(item => {
+        return item.key == value
+      })[0]
+      // 评价
+      if ( this.state == 1 && servicePersonalInfo.appraise.f_attitude != undefined
+        && servicePersonalInfo.appraise.f_response_speed != undefined
+        && servicePersonalInfo.appraise.f_treatment_degree != undefined) {
+        this.serviceUnit = servicePersonalInfo.serviceUnit
+        this.attitude = servicePersonalInfo.appraise.f_attitude
+        this.response = servicePersonalInfo.appraise.f_response_speed
+        this.solve = servicePersonalInfo.appraise.f_treatment_degree
+        this.textareaval = servicePersonalInfo.appraise.f_content
+        this.btn = true;
+        this.prohibitBtn = true;
+      } else {
+        this.btn = false;
+        this.prohibitBtn = false;
+      }
+      // 投诉
+      if (this.state == 0) {
+        this.serviceUnit = servicePersonalInfo.serviceUnit
+      }
     },
     // 点击提交
     submitBtn () {
-      if (!this.radio) return false;
-      const data = {
-        f_appraise: this.radio,
-        f_content: this.textareaval,
-        f_work_order_id: this.orderId,
-        type: 1
+      if (!this.servicePersonal) return this.$vux.toast.text('请选择服务人员')
+      this.prohibitBtn = true;
+      if (this.state == 1) {
+        const data = {
+          f_work_order_id: this.orderId,
+          f_worker_id: this.servicePersonal,
+          f_content: this.textareaval,
+          f_treatment_degree: this.solve,
+          f_response_speed: this.response,
+          f_attitude: this.attitude,
+          type: 1
+        }
+        this.evaluate(data)
+      } else if (this.state == 0){
+        const data = {
+          f_work_order_id: this.orderId,
+          f_servicer_id: this.servicePersonal,
+          f_content: this.textareaval,
+        }
+        this.complaint(data)
       }
+    },
+    // 评价
+    evaluate(data) {
+      // console.log(data)
       this.axios
         .post('appraise/saveAppraise.do', data)
         .then(res => {
-          console.log(res)
+          // console.log(res)
           const {status, data:{state}} = res
-          if (status != 200) return false;
-          if (state == 1) {
-            this.toastValue = '评价成功'
-            const _that = this
-            setTimeout(function () {
-              _that.$router.push({
-                path: '/myorderlistitem',
-                query: {
-                  index: _that.index,
-                  id:_that.id
-                }
-              })
-            }, 800)
+          if (state != 1) {
+            this.prohibitBtn = false;
+            this.$vux.toast.text(res.data.error);
           } else {
-            const {error} = res.data
-            this.toastValue = error
+            this.$vux.toast.text('评价成功')
+            setTimeout(() => {
+              this.$router.push({path: '/myorderlistitem', query: {id:this.id}})
+            }, 800)
           }
-          this.toastShow = true
+        })
+    },
+    // 投诉
+    complaint(data) {
+      // console.log(data)
+      this.axios
+        .post('complain/saveComplain.do', data)
+        .then(res => {
+          console.log(res)
+          if (res.data.res != 1) {
+            this.prohibitBtn = false;
+            this.$vux.toast.text('保存失败');
+          } else {
+            this.$vux.toast.text('保存成功')
+            setTimeout(() => {
+              this.$router.push({path: '/myorderlistitem', query: {id:this.id}})
+            }, 800)
+          }
         })
     }
   }
@@ -153,5 +256,27 @@ export default {
   position: fixed;
   bottom: 0;
   border-radius: 0px;
+}
+.service /deep/ .weui-label {
+  width: 105px !important;
+}
+/deep/ .range-min,
+/deep/ .range-max {
+  width: unset;
+}
+/deep/ .range-min {
+  left: -60px;
+}
+/deep/ .range-max {
+  right: -84px;
+}
+/deep/ .range-handle {
+  height: 20px;
+  width: 20px;
+  top: -8.5px !important;
+}
+/deep/ .range-bar {
+  width: 70%;
+  left: 15px;
 }
 </style>

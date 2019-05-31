@@ -6,7 +6,7 @@
             style="box-sizing: border-box; padding-top: 0px;padding-bottom: 15px;">
     <ul>
       <li class="clearfix"
-          @click="$router.push({path: `/performorderinfo`, query: {id: item.id, index: index}})"
+          @click="$router.push({path: `/performorderinfo`, query: {id: item.id}})"
           v-for="(item) in list" :key="item.id">
         <div class="item-content">
           <h3>问题：{{item.f_description}}</h3>
@@ -25,7 +25,6 @@
 <script>
   export default {
     name: "listitem",
-    props:['index'],
     data() {
       return {
         list: [],
@@ -36,12 +35,17 @@
         flag: true,
       }
     },
+    computed: {
+      index() {
+        return this.$store.state.navIndex
+      }
+    },
     watch: {
       index(newVal, oldVal) {
         this.getIndex(newVal)
       }
     },
-    created () {
+    mounted() {
       this.getIndex(this.index)
     },
     methods: {
@@ -76,9 +80,7 @@
             const {status} = res
             if (status !== 200) return false;
             const {rows, total} = res.data
-            rows.forEach(item => {
-              this.list.push(item)
-            })
+            this.list = this.list.concat(rows)
             this.pageTotal = Math.ceil(total/10)
             this.page++;
           })

@@ -5,19 +5,19 @@
         <div v-show="showHeader" class="weui-uploader__hd">
           <p class="weui-uploader__title"> {{ title }} </p>
           <div v-show="showHeader && showTip" class="weui-uploader__info">
-            {{ images.length }} / {{ max }}
+            {{ previmg.length }} / {{ max }}
           </div>
         </div>
 
         <div class="weui-uploader__bd" :class="{small: size === 'small'}">
-          <div v-show="!readonly && images.length > 0" class="weui-uploader__input-box remove" @click="remove">
+          <div v-show="!readonly && previmg.length > 0" class="weui-uploader__input-box remove" @click="remove">
           </div>
 
           <ul class="weui-uploader__files">
-            <uploader-item v-for="(image,index) in images" :background-image="image.url" :key="image.url" @click.native="preview(index)"></uploader-item>
+            <uploader-item v-for="(image,index) in previmg" :backgroundImage="image.src" :key="image.src" @click.native="preview(index)"></uploader-item>
           </ul>
-          
-          <div v-show="!readonly && images.length < max" class="weui-uploader__input-box" @click="add">
+
+          <div v-show="!readonly && previmg.length < max" class="weui-uploader__input-box" @click="add">
             <input v-if="!handleClick" ref="input" class="weui-uploader__input" type="file" accept="image/*" :capture="showCapture" @change="change">
           </div>
         </div>
@@ -138,6 +138,7 @@ export default {
 
         axios.post(this.uploadUrl, formData)
         .then((response) => {
+          // console.log(response)
           if (this.$vux && this.$vux.loading) {
             this.$vux.loading.hide()
           }
@@ -151,6 +152,8 @@ export default {
             msrc: URL.createObjectURL(file),
             src: URL.createObjectURL(file),
           });
+          // console.log('previmg', this.previmg)
+
         })
       } else {
         this.$emit('upload-image', formData)

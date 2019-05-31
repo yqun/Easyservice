@@ -23,16 +23,9 @@
                 text-align="center">
       </x-input>
     </group>
-    <x-button :gradients="btncolor" class="btn" @click.native="changePaswword()">保存</x-button>
-    <!-- toast -->
-    <toast v-model="toastShow"
-           :text="toastValue"
-           type="text"
-           :time="800"
-           is-show-mask
-           position="middle"
-           width="10em">
-    </toast>
+    <div class="footerBtn">
+      <x-button :gradients="btncolor" class="btn" @click.native="changePaswword()" :disabled="prohibitBtn">保存</x-button>
+    </div>
   </div>
 </template>
 
@@ -45,65 +38,37 @@ export default {
       oldPassword: '',
       newPassword: '',
       againNewPassword: '',
-      toastShow: false,
-      toastValue: ''
+      prohibitBtn:　false, // 保存按钮
     }
   },
   methods: {
     // 保存更改
     changePaswword() {
       // 判断 密码  必须填写
-      if (this.oldPassword && this.newPassword && this.againNewPassword) {
-        // 判断 旧密码 新密码  不相同
-        if (this.oldPassword != this.newPassword) {
-          // 判断 新密码 重复正确
-          if (this.newPassword == this.againNewPassword) {
-            // 判断条件成立 更改密码
-            this.judgeOldPassword()
-          } else {
-            this.toastShow = true
-            this.toastValue = '重复新密码不同'
-          }
-        } else {
-          this.toastShow = true
-          this.toastValue = '旧密码与新密码不能相同'
-        }
-      } else {
-        this.toastShow = true
-        this.toastValue = '请完整填写信息'
-      }
+      if (!this.oldPassword || !this.newPassword || !this.againNewPassword) return this.$vux.toast.text('请完整填写信息');
+      // 判断 旧密码 新密码  不相同
+      if (this.oldPassword == this.newPassword) return this.$vux.toast.text('旧密码与新密码不能相同');
+      // 判断 新密码 重复正确
+      if (this.newPassword != this.againNewPassword) return this.$vux.toast.text('重复新密码不同')
+      // 判断条件成立 更改密码
+      this.judgeOldPassword()
     },
     // 判断旧密码是否正确
     judgeOldPassword() {
-      const data = {
-        pwdCu: this.oldPassword,
-        newPwd: this.newPassword
-      }
+      this.prohibitBtn = true;
+      const data = {pwdCu: this.oldPassword, newPwd: this.newPassword}
       this.axios
         .post('/user/updatePwd.do', data)
         .then(res => {
           // console.log(res)
-          const {status} = res
-          if (status == 200) {
-            const state = res.data.res
-            if (state == 'success') {
-              // 旧密码输入正确
-              // 提示信息
-              this.toastShow = true
-              this.toastValue = '密码修改成功'
-              // 重新设置token 页面跳转
-              const {token} = res.data
-              window.sessionStorage.setItem('token', token)
-              const _that = this
-              setTimeout(function() {
-                _that.$router.push('/userinfo')
-              }, 800)
-            } else {
-              const {error} = res.data
-              this.toastShow = true
-              this.toastValue = error
-            }
-          }
+          const state = res.data.res
+          if (state != 'success') return this.prohibitBtn = false, this.$vux.toast.text(res.data.error);
+          // 旧密码输入正确 提示信息
+          this.$vux.toast.text('密码修改成功')
+          // 重新设置token 页面跳转
+          const {token} = res.data
+          window.localStorage.setItem('token', token)
+          setTimeout(() => {this.$router.push('/userinfo')}, 800)
         })
     }
   }
@@ -111,6 +76,11 @@ export default {
 </script>
 
 <style scoped>
+.footerBtn {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 10px;
+}
 .btn {
   margin-top: 30px;
 }
