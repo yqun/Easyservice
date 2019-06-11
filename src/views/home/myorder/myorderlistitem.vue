@@ -77,7 +77,7 @@ export default {
     // 获取待指派
     getWait() {
       const data = {
-        f_handler_org_id: this.id,
+        f_equmentType_id: this.id,
         f_work_order_state: this.status,
         page: this.page,
         rows: this.rows

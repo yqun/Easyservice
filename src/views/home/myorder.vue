@@ -28,16 +28,34 @@ export default {
     if (to.path != '/myorderlistitem' && to.path != '/ordersubmit') this.$store.commit('NavIndex', 0);
     next()
   },
-  created() {
-    this.getMyorder()
+  computed: {
+    index() {
+      return this.$store.state.navIndex;
+    }
+  },
+  watch: {
+    index(newVal, oldVal) {
+      this.getMyorder(newVal)
+    }
+  },
+  mounted() {
+    this.getMyorder(0)
   },
   methods: {
     // 获取我的工单信息
-    getMyorder() {
+    getMyorder(index) {
+      let url = ''
+      if (index === 0) {
+        url = 'equmentType/findUnfinishedOrderEqumentType.do'
+      } else if (index === 1) {
+        url = 'equmentType/findFinishedOrderEqumentType.do'
+      } else if (index === 2) {
+        url = 'equmentType/findCanceledOrderEqumentType.do'
+      }
       this.axios
-        .get('org/findOrgsInRelation.do')
+        .get(url)
         .then(res => {
-          // console.log(res)
+          console.log(res)
           const {status} = res
           if (status !== 200) return false;
           const {rows} = res.data

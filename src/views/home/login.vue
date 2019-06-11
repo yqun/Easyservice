@@ -100,7 +100,7 @@ input {
   background-color: transparent;
   margin-top: 20px;
   padding: 0 10px;
-  border-radius: 14px;
+  border-radius: 8px;
   color: #fff;
 }
 .vux-check-icon > /deep/ span {

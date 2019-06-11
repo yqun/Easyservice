@@ -9,19 +9,19 @@
               style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
     </x-header>
     <group title="基本信息" >
-      <x-input title="问题："disabled :value="orderInfo.f_description" text-align="right"></x-input>
+      <x-input title="问题：　　　　"disabled :value="orderInfo.f_description"></x-input>
       <div class="vux-x-input weui-cell" v-if="orderInfo.imgIds">
         <img :src="url.imgUrl" alt="" style="height: 100px;" v-for="url in orderInfo.imgIds" :key="url.id">
       </div>
-      <x-input title="工单状态："disabled :value="orderInfo.f_work_order_state" text-align="right"></x-input>
-      <x-input title="处理单位名称："disabled :value="orderInfo.f_handler_org_name" text-align="right"></x-input>
-      <x-input title="联系方式："v-if="false" disabled :value="orderInfo.f_org_phnum" text-align="right"></x-input>
-      <x-input title="客户名称："disabled :value="orderInfo.f_customer_name" text-align="right"></x-input>
-      <x-input title="客户电话："disabled :value="orderInfo.f_customer_phnum" text-align="right"></x-input>
-      <x-input title="服务地址："disabled :value="orderInfo.f_address" text-align="right"></x-input>
-      <x-input title="工单类别："disabled :value="orderInfo.f_work_order_type" text-align="right"></x-input>
-      <x-input title="资产类别："disabled :value="orderInfo.f_equmentType_name" text-align="right"></x-input>
-      <x-input title="备注："disabled :value="orderInfo.f_remark" text-align="right"></x-input>
+      <x-input title="工单状态：　　"disabled :value="orderInfo.f_work_order_state"></x-input>
+      <x-input title="处理单位名称："disabled :value="orderInfo.f_handler_org_name"></x-input>
+      <x-input title="联系方式：　　"v-if="false" disabled :value="orderInfo.f_org_phnum"></x-input>
+      <x-input title="客户名称：　　"disabled :value="orderInfo.f_customer_name"></x-input>
+      <x-input title="客户电话：　　"disabled :value="orderInfo.f_customer_phnum"></x-input>
+      <x-input title="服务地址：　　"disabled :value="orderInfo.f_address"></x-input>
+      <x-input title="工单类别：　　"disabled :value="orderInfo.f_work_order_type"></x-input>
+      <x-input title="资产类别：　　"disabled :value="orderInfo.f_equmentType_name"></x-input>
+      <x-input title="备注：　　　　"disabled :value="orderInfo.f_remark"></x-input>
     </group>
     <group title="进度信息">
       <timeline class="timeline-demo" v-for="(item,index) in count" :key="index">

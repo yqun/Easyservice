@@ -1,7 +1,7 @@
 <template>
   <div class="fixedpadding" style="height: 100%;box-sizing: border-box">
     <x-header style="background-color:dodgerblue;color:#fff;">
-      <span>e服务</span>
+      <strong>运维平台</strong>
       <x-icon slot="overwrite-left"
               type="ios-arrow-left"
               size="30"

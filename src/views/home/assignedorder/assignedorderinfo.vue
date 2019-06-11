@@ -6,7 +6,7 @@
               @click="$router.push('/assignedorder')" style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
     </x-header>
     <group title="基本信息">
-      <x-input title="　　　　问题：" disabled :value="orderInfo.f_description" text-align="right"></x-input>
+      <x-input title="　　　　问题：" disabled :value="orderInfo.f_description"></x-input>
       <div class="vux-x-input weui-cell" v-if="orderInfo.imgIds">
         <img :src="url.imgUrl" alt="" style="height: 100px;" v-for="url in orderInfo.imgIds" :key="url.id">
       </div>
@@ -101,7 +101,7 @@ export default {
           if (status != 200) return false;
           if (data.length != 0) {
             data.forEach(item => {
-              this.f_name += "　" + item.f_name
+              this.f_name += item.f_name + '　'
             })
           }
         })

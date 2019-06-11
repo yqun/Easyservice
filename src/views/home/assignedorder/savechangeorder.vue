@@ -138,7 +138,7 @@ export default {
           if (status != 200) return false;
           if (data.length != 0) {
             data.forEach(item => {
-              this.f_name += "　" + item.f_name
+              this.f_name += item.f_name + "　"
               this.f_nameId.push(item.id)
             })
 

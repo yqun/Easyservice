@@ -47,8 +47,9 @@ export default {
     // 获取  用户权限
     getUser() {
       this.roles = JSON.parse(window.localStorage.getItem('roles'))
+      console.log(this.roles)
       this.roles.forEach(item => {
-        if (item.id == 6) {this.assignedorder = true}
+        if (item.id == 6 || item.id == 4 || item.id == 2) {this.assignedorder = true}
         if (item.id == 8) {this.performorder = true}
       })
     },
