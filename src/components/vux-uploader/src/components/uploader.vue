@@ -92,6 +92,11 @@ export default {
   components: {
     UploaderItem
   },
+  data() {
+    return {
+      token: ''
+    }
+  },
   methods: {
     add () {
       if (this.handleClick) {
@@ -113,6 +118,7 @@ export default {
     },
     // 适用于action的情况
     change () {
+      this.token = window.localStorage.getItem('token')
       if (this.handleClick) {
         return
       }
@@ -138,21 +144,20 @@ export default {
 
         axios.post(this.uploadUrl, formData)
         .then((response) => {
-          // console.log(response)
           if (this.$vux && this.$vux.loading) {
             this.$vux.loading.hide()
           }
           this.$refs.input.value = ''
-          response.data.url = `${this.axiosUrl}system/getImage.do?id=${response.data.id}`
+          response.data.url = `${this.axiosUrl}system/getImage.do?id=${response.data.id}&token=${this.token}`
           this.images.push(response.data)
-
           // 显示的缩略图
-          let URL = window.URL || window.webkitURL
+          // let URL = window.URL || window.webkitURL
+          // msrc: URL.createObjectURL(file),
+          // src: URL.createObjectURL(file),
           this.previmg.push({
-            msrc: URL.createObjectURL(file),
-            src: URL.createObjectURL(file),
+            msrc:response.data.url,
+            src:response.data.url
           });
-          // console.log('previmg', this.previmg)
 
         })
       } else {

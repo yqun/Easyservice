@@ -9,12 +9,14 @@ import personalRouter from '@/router/personalRouter'
 import keepAliveRouter from '@/router/keepAliveRouter'
 
 import Login from '@/views/home/login'  // 登录
+import Register from '@/views/home/register'  // 注册
 
 Vue.use(Router)
 
 const router = new Router ({
   routes: [
     {path: '/login', name:'login', component: Login},
+    {path: '/register', name:'register', component: Register},
     ...homeRouter,
     ...myorderRouter,
     ...personalRouter,
@@ -27,7 +29,7 @@ const router = new Router ({
 // 在跳转之前会触发拦截
 router.beforeEach((to, from, next) => {
   router.path = from.path
-  if (to.path === '/login') return next();
+  if (to.path === '/login' || to.path === '/register') return next();
   const token = window.localStorage.getItem('token')
   if (!token) return router.push('/login')
   next()

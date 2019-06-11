@@ -46,7 +46,4 @@ i.iconfont.icon-fanhui {
   position: absolute;
   left: 20px;
 }
-.content {
-
-}
 </style>

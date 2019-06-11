@@ -1,5 +1,13 @@
 <template>
   <div style="height: 100%; width: 100%; background-color: #fff;">
+    <x-header style="background-color:dodgerblue;color:#fff;">
+      <span>选择服务地址</span>
+      <x-icon slot="overwrite-left"
+              type="ios-arrow-left"
+              size="30"
+              @click="$router.go(-1)"
+              style="fill:#fff;position:relative;top:-5px;left:-3px;"></x-icon>
+    </x-header>
     <div style="padding: 10px;">
       <el-tree
         :data="data"
