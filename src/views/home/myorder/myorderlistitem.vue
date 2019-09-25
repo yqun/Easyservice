@@ -12,8 +12,8 @@
             <p>地址：{{item.f_address}}</p>
             <span>{{item.f_create_time}}</span>
             <div>
-              <i v-if="navIndex != 2" @click.stop="evaluate(item,1)">评价工单</i>
-              <i v-if="navIndex != 2" @click.stop="evaluate(item,0)">投诉</i>
+              <i v-if="navIndex == 1" @click.stop="evaluate(item,1)">评价工单</i>
+              <i v-if="navIndex == 1" @click.stop="evaluate(item,0)">投诉</i>
             </div>
           </div>
           <div class="item-state">

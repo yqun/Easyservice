@@ -8,5 +8,25 @@
   <body>
     <div id="app-box"></div>
     <!-- built files will be auto injected -->
+    <script>
+      apiready = function () {
+        var appVersion = api.appVersion // 获取app的版本号
+        window.localStorage.setItem('appVersion',appVersion)
+        // alert(appVersion)
+        var ajpush = api.require('ajpush');
+        ajpush.init(function(ret, err){
+          if(ret && ret.status){
+            console.log('操作成功!');
+          }else{
+            console.log('操作失败!');
+          }
+        });
+        ajpush.getRegistrationId(function(ret, err) {
+          var registrationId = ret.id;
+          window.sessionStorage.setItem('reg_id',registrationId)
+          // alert(registrationId)
+        });
+      }
+    </script>
   </body>
 </html>

@@ -21,9 +21,9 @@ import { Toast } from 'vux'
 import { Confirm } from 'vux'
 import { Alert } from 'vux'
 import { ToastPlugin } from 'vux'
+import  { ConfirmPlugin } from 'vux'
 // 自定义全局组件
 import NavBar from './navBar'
-
 
 
 
@@ -53,3 +53,4 @@ Vue.component('confirm', Confirm)
 Vue.component('alert', Alert)
 Vue.component('navBar', NavBar)
 Vue.use(ToastPlugin, {position: 'middle'})
+Vue.use(ConfirmPlugin)

@@ -20,7 +20,7 @@
      <selector title="　资产类别：" :options="assets" v-model="assestkey" placeholder="请选择资产类别"></selector>
       <x-input title="　　　备注：" :show-clear="false" v-model="f_remark" class="border"></x-input>
       <x-input :class="{border: !f_name}" title="已指派人员：" v-model="f_name"
-               @on-focus="$router.push({path: '/salesman', query: {id: orderId, userId: 2}})">
+               @click.native="$router.push({path: '/salesman', query: {id: orderId, userId: 2}})">
       </x-input>
     </group>
     <x-button :gradients="btncolor" class="btnsubmit" @click.native="saveF_name()" :disabled="prohibitBtn">保存修改</x-button>

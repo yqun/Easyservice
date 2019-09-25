@@ -103,4 +103,15 @@ i.iconfont.icon-jiahao {
   text-align: center;
   color: #fff;
 }
+/*i.add::before {*/
+  /*content: '点击上报问题';*/
+  /*display: block;*/
+  /*width: 100px;*/
+  /*height: 20px;*/
+  /*font-size:12px;*/
+  /*color: red;*/
+  /*position: absolute;*/
+  /*top: -40px;*/
+  /*left: -30px;*/
+/*}*/
 </style>

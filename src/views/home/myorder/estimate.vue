@@ -16,7 +16,7 @@
       <x-input class="service" title="服务单位" v-model="serviceUnit" disabled></x-input>
     </group>
     <evaluate :attitude="attitude" :response="response" :solve="solve" :btn="btn" :state="state"></evaluate>
-    <div v-if="!btn">
+    <div v-if="!btn" class="estimate">
       <group :title="`服务态度　${attitude}`" v-if="state*1"> <!--服务态度-->
         <cell title=" " primary="content">
           <range v-model="attitude" minHTML="不耐烦(0)" maxHTML="热情服务(100)"></range>
@@ -92,7 +92,7 @@ export default {
         this.axios
           .get(`appraise/findUserAndAppraiseByWorkOrder.do?id=${this.orderId}`)
           .then(res => {
-            // console.log(res)
+            console.log(res)
             const {users} = res.data
             if (!users || !users.length) return false;
             users.forEach(item => {
@@ -252,6 +252,11 @@ export default {
   left: 6px;
   top: 6px;
 }
+.estimate .weui-cell {
+  line-height: 1;
+  height: 26px;
+}
+
 .btn {
   position: fixed;
   bottom: 0;

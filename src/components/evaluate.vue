@@ -1,5 +1,5 @@
 <template>
-  <div v-if="btn && state">
+  <div v-if="btn && state" class="estimate">
     <group :title="`服务态度　${attitude}`"> <!--服务态度-->
       <cell title=" " primary="content">
         <range v-model="attitude" minHTML="不耐烦(0)" maxHTML="热情服务(100)" disabled></range>
@@ -28,5 +28,8 @@ export default {
 </script>
 
 <style scoped>
-
+  .estimate .weui-cell {
+    line-height: 1;
+    height: 26px;
+  }
 </style>

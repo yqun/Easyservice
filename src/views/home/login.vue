@@ -6,9 +6,9 @@
     <div style="text-align: left; margin-top: 10px; font-size: 16px;">
       <check-icon :value.sync="remember" type="plain">记住用户名</check-icon>
     </div>
-    <x-button :gradients="['#8acffe', '#2A91D8']" @click.native="login()" :disabled="prohibitBtn">登录</x-button>
+    <x-button :gradients="['#8acffe', '#2A91D8']" @click.native="login()" :disabled="prohibitBtn">登　录</x-button>
     <div class="register"><span @click="$router.push('/register')">注册</span></div>
-    <div class="footer">北京金山顶尖科技股份有限公司</div>
+    <div class="footer">运维平台</div>
   </div>
 </template>
 
@@ -42,7 +42,7 @@ export default {
       // const reg_id = uexJPush.getRegistrationID();
       if (!this.useriphone) return this.$vux.toast.text('请输入用户名')
       if (!this.userpwd) return this.$vux.toast.text('请输入密码')
-      const data = {f_phone_num: this.useriphone, f_pwd: this.userpwd, reg_id: 1111}
+      const data = {f_phone_num: this.useriphone, f_pwd: this.userpwd, reg_id: window.sessionStorage.getItem('reg_id')}
       this.prohibitBtn = true;
       this.axios
         .post('user/mobile_logIn.do', data)

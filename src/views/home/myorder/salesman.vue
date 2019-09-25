@@ -71,10 +71,12 @@ export default {
         const jsonData = JSON.stringify(this.chooseUser)
         // console.log(jsonData)
         // 页面跳转
-        this.$router.push({
-          path: this.$router.path,
-          query: {id: this.orderId, user: jsonData, userId: this.userId}
-        })
+        setTimeout(() => {
+          this.$router.push({
+            path: this.$router.path,
+            query: {id: this.orderId, user: jsonData, userId: this.userId}
+          })
+        }, 800)
       }
 
     },
@@ -108,6 +110,7 @@ export default {
     // 获取 业务员
     getUser(node, resolve) {
       let flag = true
+      console.log(this.newData.length)
       if(this.newData.length) {
         this.newData.forEach((item,i) => {
           if (node.key != item.id) return false;
@@ -119,7 +122,7 @@ export default {
       if (!flag) return resolve([]);
       let id = node.key || ''
       // 判断是 业务员还是工单类型
-      console.log(this.userId)
+      // console.log(this.userId)
       let url;
       if (this.userId == 1 || this.userId == 2) {
         url = 'org/findOrgsAndUsers.do'
@@ -142,7 +145,8 @@ export default {
         })
     },
     // 选择多选框
-    chooseCheck() {
+    chooseCheck(data) {
+      // console.log(data)
       this.chooseUser = this.$refs.tree.getCheckedNodes()
       let userArr = [];
       this.chooseUser.forEach(item => {
